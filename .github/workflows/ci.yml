@@ -24,7 +24,7 @@ jobs:
       - name: Run unit tests
         run: pytest tests/unit --html=unit_test_report.html
       - name: Upload unit test report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit_test_report
           path: unit_test_report.html
@@ -49,7 +49,7 @@ jobs:
       - name: Run Behave integration tests (HTML)
         run: behave --format=behave_html_formatter:HTMLFormatter --outfile=integration_report.html
       - name: Upload integration test reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: integration_reports
           path: |
@@ -76,7 +76,7 @@ jobs:
       - name: Run Behave security tests (HTML)
         run: behave --format=behave_html_formatter:HTMLFormatter --outfile=security_report.html
       - name: Upload security test reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security_reports
           path: |
