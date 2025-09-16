@@ -27,7 +27,7 @@ Open [http://localhost:8089](http://localhost:8089) to run users.
 
 ## Scenarios
 - Happy Path (pikachu)
-- Boundary IDs (1 and 1010)
+- Boundary IDs (1 and 1026)
 - Edge Case (mr-mime)
 - Data Validation (schema + mandatory fields)
 - Response Headers (Content-Type etc.)
