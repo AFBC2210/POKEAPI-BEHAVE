@@ -22,7 +22,12 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run unit tests
-        run: pytest tests/unit
+        run: pytest tests/unit --html=unit_test_report.html
+      - name: Upload unit test report
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit_test_report
+          path: unit_test_report.html
 
   integration_tests:
     runs-on: ubuntu-latest
@@ -39,8 +44,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Behave integration tests
+      - name: Run Behave integration tests (JSON)
         run: behave -f json -o integration_report.json
+      - name: Run Behave integration tests (HTML)
+        run: behave --format=behave_html_formatter:HTMLFormatter --outfile=integration_report.html
+      - name: Upload integration test reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration_reports
+          path: |
+            integration_report.json
+            integration_report.html
 
   security_tests:
     runs-on: ubuntu-latest
@@ -57,8 +71,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Behave security tests
+      - name: Run Behave security tests (JSON)
         run: behave -f json -o security_report.json
+      - name: Run Behave security tests (HTML)
+        run: behave --format=behave_html_formatter:HTMLFormatter --outfile=security_report.html
+      - name: Upload security test reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security_reports
+          path: |
+            security_report.json
+            security_report.html
 
       - name: Run Bandit (static security analysis)
         run: pip install bandit && bandit -r .
