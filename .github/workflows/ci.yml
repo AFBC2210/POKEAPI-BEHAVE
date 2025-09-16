@@ -1,0 +1,64 @@
+name: PokeAPI Test Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest tests/unit
+
+  integration_tests:
+    runs-on: ubuntu-latest
+    needs: unit_tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Behave integration tests
+        run: behave -f json -o integration_report.json
+
+  security_tests:
+    runs-on: ubuntu-latest
+    needs: integration_tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Behave security tests
+        run: behave -f json -o security_report.json
+
+      - name: Run Bandit (static security analysis)
+        run: pip install bandit && bandit -r .

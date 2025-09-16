@@ -1,0 +1,98 @@
+Feature: Pokemon API - GET /pokemon/{pokemon} # features/pokemon.feature:3
+  Ensure the Pokemon endpoint returns correct status, headers, timing and JSON structure.
+  Scenario: Happy Path - valid pokemon name                            # features/pokemon.feature:7
+    Given the endpoint "/api/v2/pokemon/pikachu"                       # features/steps/pokemon_steps.py:21
+    When I send a GET request                                          # features/steps/pokemon_steps.py:25
+    Then the response status should be 200                             # features/steps/pokemon_steps.py:34
+    And the response time should be less than 2 seconds                # features/steps/pokemon_steps.py:39
+    And the response Content-Type should contain "application/json"    # features/steps/pokemon_steps.py:44
+    And the JSON must contain keys "id, name, abilities, moves, stats" # features/steps/pokemon_steps.py:49
+
+  Scenario: Boundary - valid ID = 1                                    # features/pokemon.feature:16
+    Given the endpoint "/api/v2/pokemon/1"                             # features/steps/pokemon_steps.py:21
+    When I send a GET request                                          # features/steps/pokemon_steps.py:25
+    Then the response status should be 200                             # features/steps/pokemon_steps.py:34
+    And the response time should be less than 2 seconds                # features/steps/pokemon_steps.py:39
+    And the JSON must contain keys "id, name, abilities, moves, stats" # features/steps/pokemon_steps.py:49
+
+  Scenario: Boundary - invalid ID >= 101010             # features/pokemon.feature:24
+    Given the endpoint "/api/v2/pokemon/101010"         # features/steps/pokemon_steps.py:21
+    When I send a GET request                           # features/steps/pokemon_steps.py:25
+    Then the response status should be 404              # features/steps/pokemon_steps.py:34
+    And the response time should be less than 2 seconds # features/steps/pokemon_steps.py:39
+
+  Scenario: Edge Case - name with special characters                   # features/pokemon.feature:31
+    Given the endpoint "/api/v2/pokemon/mr-mime"                       # features/steps/pokemon_steps.py:21
+    When I send a GET request                                          # features/steps/pokemon_steps.py:25
+    Then the response status should be 200                             # features/steps/pokemon_steps.py:34
+    And the response time should be less than 2 seconds                # features/steps/pokemon_steps.py:39
+    And the JSON must contain keys "id, name, abilities, moves, stats" # features/steps/pokemon_steps.py:49
+
+  Scenario: Data Validation and Response Headers                     # features/pokemon.feature:39
+    Given the endpoint "/api/v2/pokemon/pikachu"                     # features/steps/pokemon_steps.py:21
+    When I send a GET request                                        # features/steps/pokemon_steps.py:25
+    Then the response status should be 200                           # features/steps/pokemon_steps.py:34
+    And the response Content-Type should contain "application/json"  # features/steps/pokemon_steps.py:44
+    And the response should validate against the Pokemon JSON schema # features/steps/pokemon_steps.py:56
+
+Feature: Pokemon API Pagination - GET /pokemon?limit={limit}&offset={offset} # features/pokemon_pagination.feature:3
+  Validate list pagination, metadata, navigation and data consistency.
+  Feature: Pokemon API Pagination - GET /pokemon?limit={limit}&offset={offset}  # features/pokemon_pagination.feature:3
+
+  Scenario: Default limit is 20 when no limit provided        # features/pokemon_pagination.feature:11
+    Given the PokeAPI base URL is configured                  # features/steps/pagination_steps.py:46
+    When I request the pokemon list without limit and offset  # features/steps/pagination_steps.py:53
+    Then the pagination response status should be exactly 200 # features/steps/pagination_steps.py:210
+    And the number of results returned should be 20           # features/steps/pagination_steps.py:134
+
+  Scenario Outline: Configurable limits produce at most 1 results -- @1.1   # features/pokemon_pagination.feature:24
+    Given the PokeAPI base URL is configured                                # features/steps/pagination_steps.py:46
+    When I request the pokemon list with limit 1 and offset 0               # features/steps/pagination_steps.py:60
+    Then the pagination response status should be exactly 200               # features/steps/pagination_steps.py:210
+    And the number of results returned should be less than or equal to 1    # features/steps/pagination_steps.py:144
+
+  Scenario Outline: Configurable limits produce at most 50 results -- @1.2   # features/pokemon_pagination.feature:25
+    Given the PokeAPI base URL is configured                                 # features/steps/pagination_steps.py:46
+    When I request the pokemon list with limit 50 and offset 0               # features/steps/pagination_steps.py:60
+    Then the pagination response status should be exactly 200                # features/steps/pagination_steps.py:210
+    And the number of results returned should be less than or equal to 50    # features/steps/pagination_steps.py:144
+
+  Scenario Outline: Configurable limits produce at most 100 results -- @1.3   # features/pokemon_pagination.feature:26
+    Given the PokeAPI base URL is configured                                  # features/steps/pagination_steps.py:46
+    When I request the pokemon list with limit 100 and offset 0               # features/steps/pagination_steps.py:60
+    Then the pagination response status should be exactly 200                 # features/steps/pagination_steps.py:210
+    And the number of results returned should be less than or equal to 100    # features/steps/pagination_steps.py:144
+
+  Scenario Outline: Configurable limits produce at most 1000 results -- @1.4   # features/pokemon_pagination.feature:27
+    Given the PokeAPI base URL is configured                                   # features/steps/pagination_steps.py:46
+    When I request the pokemon list with limit 1000 and offset 0               # features/steps/pagination_steps.py:60
+    Then the pagination response status should be exactly 200                  # features/steps/pagination_steps.py:210
+    And the number of results returned should be less than or equal to 1000    # features/steps/pagination_steps.py:144
+
+  Scenario: Normal pagination and bidirectional navigation (limit=20)  # features/pokemon_pagination.feature:30
+    Given the PokeAPI base URL is configured                           # features/steps/pagination_steps.py:46
+    Given I request the list with limit 20 and offset 0                # features/steps/pagination_steps.py:81
+    And I request the list with limit 20 and offset 20                 # features/steps/pagination_steps.py:90
+    And I request the list with limit 20 and offset 40                 # features/steps/pagination_steps.py:99
+    Then next and previous links should be valid where applicable      # features/steps/pagination_steps.py:152
+    And there should be no duplicate pokemon between those pages       # features/steps/pagination_steps.py:169
+    And the metadata count should be consistent across these pages     # features/steps/pagination_steps.py:186
+
+  Scenario: Offset out of range returns empty results (or sanitized response)  # features/pokemon_pagination.feature:39
+    Given the PokeAPI base URL is configured                                   # features/steps/pagination_steps.py:46
+    Given I get the total count from the service                               # features/steps/pagination_steps.py:108
+    When I request the list with limit 20 and offset greater than count + 1000 # features/steps/pagination_steps.py:118
+    Then the pagination response status should be exactly 200                  # features/steps/pagination_steps.py:210
+    And the results list should be empty                                       # features/steps/pagination_steps.py:202
+
+  Scenario: Negative parameters handled gracefully                                                                                # features/pokemon_pagination.feature:46
+    Given the PokeAPI base URL is configured                                                                                      # features/steps/pagination_steps.py:46
+    When I request the list with limit -1 and offset -10                                                                          # features/steps/pagination_steps.py:74
+    Then the service should either return an error (status >= 400) or return a sanitized response (status 200 with valid results) # features/steps/pagination_steps.py:218
+
+  Scenario: Consistency temporal - same page returns same items across time    # features/pokemon_pagination.feature:52
+    Given the PokeAPI base URL is configured                                   # features/steps/pagination_steps.py:46
+    Given I request the list with limit 20 and offset 40 and capture the names # features/steps/pagination_steps.py:232
+    When I wait 2 seconds and request the same list again                      # features/steps/pagination_steps.py:244
+    Then the names returned should be identical (order and items)              # features/steps/pagination_steps.py:253
+
